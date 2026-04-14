@@ -50,6 +50,9 @@ class MainActivity : AppCompatActivity() {
     binding.openLedgerButton.setOnClickListener {
       startActivity(Intent(this, LedgerHistoryActivity::class.java))
     }
+    binding.openBountyButton.setOnClickListener {
+      startActivity(Intent(this, BountySubmissionActivity::class.java))
+    }
 
     lifecycleScope.launch {
       repository.registerCurrentDevice(Build.MODEL)

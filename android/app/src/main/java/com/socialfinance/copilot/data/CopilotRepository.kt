@@ -148,6 +148,56 @@ class CopilotRepository(context: Context) {
     }
   }
 
+  suspend fun submitBountyDraft(
+    merchantVpa: String,
+    type: String,
+    localPhotoUri: Uri,
+    gps: GeoPointPayload,
+  ): Result<BountySubmissionResponse> {
+    return withContext(Dispatchers.IO) {
+      runCatching {
+        val uploadIntent = post(
+          "api/media/upload-intents",
+          MediaUploadIntentRequest(
+            purpose = "BOUNTY",
+            fileName = "bounty-${System.currentTimeMillis()}.jpg",
+            mimeType = appContext.contentResolver.getType(localPhotoUri) ?: "image/jpeg",
+          ),
+          MediaUploadIntentResponse.serializer(),
+        )
+
+        uploadCapturedMedia(
+          uploadUrl = uploadIntent.uploadUrl,
+          localPhotoUri = localPhotoUri,
+          mimeType = uploadIntent.mimeType,
+        )
+
+        post(
+          "api/media/confirm",
+          MediaUploadConfirmRequest(uploadIntentId = uploadIntent.id),
+          MediaUploadIntentResponse.serializer(),
+        )
+
+        post(
+          "api/bounties/submissions",
+          BountySubmissionRequest(
+            merchantVpa = merchantVpa,
+            type = type,
+            photoRef = uploadIntent.mediaRef,
+            gps = gps,
+            aiSignals = BountyAiSignalsPayload(
+              qualityScore = 0.82,
+              duplicateLikely = false,
+              detectedTargets = if (type == "MENU") listOf("menu board", "pricing text") else listOf("merchant qr stand"),
+              textCoverage = if (type == "MENU") 0.55 else 0.28,
+            ),
+          ),
+          BountySubmissionResponse.serializer(),
+        )
+      }
+    }
+  }
+
   private fun uploadCapturedMedia(
     uploadUrl: String,
     localPhotoUri: Uri,
@@ -191,6 +241,7 @@ class CopilotRepository(context: Context) {
       is DeviceRegistrationRequest -> json.encodeToString(DeviceRegistrationRequest.serializer(), payload)
       is MediaUploadIntentRequest -> json.encodeToString(MediaUploadIntentRequest.serializer(), payload)
       is MediaUploadConfirmRequest -> json.encodeToString(MediaUploadConfirmRequest.serializer(), payload)
+      is BountySubmissionRequest -> json.encodeToString(BountySubmissionRequest.serializer(), payload)
       is SnapExtractionRequest -> json.encodeToString(SnapExtractionRequest.serializer(), payload)
       is SnapUploadRequest -> json.encodeToString(SnapUploadRequest.serializer(), payload)
       else -> throw IOException("Unsupported payload: ${payload::class.java.simpleName}")

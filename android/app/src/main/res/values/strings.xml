@@ -8,6 +8,7 @@
     <string name="open_location_settings">Open location settings</string>
     <string name="open_docs">Open Android notification docs</string>
     <string name="open_ledger">Open ledger history</string>
+    <string name="open_bounty">Open bounty capture</string>
     <string name="prompt_channel_name">Snap prompts</string>
     <string name="prompt_channel_description">Instant prompts after UPI payments are detected</string>
     <string name="item_name_hint">What did the user buy?</string>
@@ -31,4 +32,16 @@
     <string name="ledger_title">Your ledger</string>
     <string name="ledger_empty_state">No entries yet</string>
     <string name="ledger_load_failed">Failed to load ledger</string>
+    <string name="bounty_title">Map an offline merchant</string>
+    <string name="bounty_subtitle">Capture a menu or QR stand to help build the offline pricing graph.</string>
+    <string name="merchant_vpa_hint">Merchant VPA</string>
+    <string name="merchant_vpa_required">Enter the merchant VPA</string>
+    <string name="bounty_type_hint">Bounty type</string>
+    <string name="capture_bounty_photo">Capture bounty photo</string>
+    <string name="submit_bounty">Submit bounty</string>
+    <string name="submitting_bounty">Uploading and submitting bounty…</string>
+    <string name="bounty_submit_success">Bounty %1$s • payout %2$s</string>
+    <string name="bounty_submit_failed">Bounty submission failed</string>
+    <string name="bounty_sent">Bounty sent</string>
+    <string name="location_required">Location is required for bounty submissions</string>
 </resources>

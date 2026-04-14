@@ -136,3 +136,38 @@ data class PreparedSnapDraft(
   val confidence: Double,
   val notes: List<String>,
 )
+
+@Serializable
+data class BountyAiSignalsPayload(
+  val qualityScore: Double,
+  val duplicateLikely: Boolean,
+  val detectedTargets: List<String>,
+  val textCoverage: Double,
+  val fraudSignals: List<String> = emptyList(),
+)
+
+@Serializable
+data class BountySubmissionRequest(
+  val merchantVpa: String,
+  val type: String,
+  val photoRef: String,
+  val gps: GeoPointPayload,
+  val locationName: String? = null,
+  val city: String? = null,
+  val aiSignals: BountyAiSignalsPayload,
+)
+
+@Serializable
+data class BountySubmissionPayload(
+  val id: String,
+  val merchantVpa: String,
+  val type: String,
+  val payoutPaise: Int,
+  val status: String,
+  val reasons: List<String>,
+)
+
+@Serializable
+data class BountySubmissionResponse(
+  val submission: BountySubmissionPayload,
+)
