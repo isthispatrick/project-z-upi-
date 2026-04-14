@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Social Finance Copilot</string>
+    <string name="notification_service_label">UPI Notification Listener</string>
+    <string name="main_subtitle">Listens for UPI notifications, sends them to the copilot backend, and opens a snap composer with the AI prompt.</string>
+    <string name="notifications_enabled">Notification access ready</string>
+    <string name="notifications_disabled">Grant notification access to begin UPI ingestion</string>
+    <string name="open_listener_settings">Open notification listener settings</string>
+    <string name="open_location_settings">Open location settings</string>
+    <string name="open_docs">Open Android notification docs</string>
+    <string name="open_ledger">Open ledger history</string>
+    <string name="prompt_channel_name">Snap prompts</string>
+    <string name="prompt_channel_description">Instant prompts after UPI payments are detected</string>
+    <string name="item_name_hint">What did the user buy?</string>
+    <string name="item_price_hint">Price in rupees</string>
+    <string name="review_section_label">Review extracted items</string>
+    <string name="review_section_subtext">Edit the AI draft before it hits the ledger.</string>
+    <string name="add_item">Add item</string>
+    <string name="remove_item">Remove</string>
+    <string name="capture_photo">Capture photo</string>
+    <string name="photo_capture_missing">Capture a photo before submitting</string>
+    <string name="photo_captured_ready">Photo captured and ready to upload</string>
+    <string name="preparing_draft">Uploading and extracting draft items…</string>
+    <string name="extract_before_submit">Capture and extract a draft before submitting</string>
+    <string name="extraction_waiting">Draft items will appear here after capture</string>
+    <string name="extraction_failed">Could not prepare draft items from this snap</string>
+    <string name="extraction_ready">Draft ready • confidence %.2f • %s</string>
+    <string name="camera_permission_required">Camera permission is required to capture a snap</string>
+    <string name="submit_snap">Submit snap draft</string>
+    <string name="snap_submit_success">Snap draft submitted</string>
+    <string name="snap_submit_failure">Snap submission failed</string>
+    <string name="ledger_title">Your ledger</string>
+    <string name="ledger_empty_state">No entries yet</string>
+    <string name="ledger_load_failed">Failed to load ledger</string>
+</resources>

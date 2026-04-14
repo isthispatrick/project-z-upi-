@@ -1,0 +1,30 @@
+{
+  "name": "social-finance-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Starter backend for a social finance copilot built around UPI notification intelligence, snap-based expense logging, and crowdsourced merchant mapping.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.20.0",
+    "transaction-sms-parser": "^3.3.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

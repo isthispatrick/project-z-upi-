@@ -1,0 +1,138 @@
+package com.socialfinance.copilot.data
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class IngestNotificationRequest(
+  val deviceId: String,
+  val sourceApp: String,
+  val rawText: String,
+  val capturedAt: String? = null,
+)
+
+@Serializable
+data class PromptCard(
+  val headline: String,
+  val subtext: String,
+)
+
+@Serializable
+data class TransactionPayload(
+  val id: String,
+  val category: String,
+  val merchantLabel: String? = null,
+)
+
+@Serializable
+data class MerchantPayload(
+  val vpa: String,
+  val displayName: String,
+  val categoryHint: String,
+  val locationName: String? = null,
+  val city: String? = null,
+)
+
+@Serializable
+data class IngestNotificationResponse(
+  val prompt: PromptCard,
+  val transaction: TransactionPayload,
+  val merchant: MerchantPayload? = null,
+)
+
+@Serializable
+data class GeoPointPayload(
+  val lat: Double,
+  val lng: Double,
+  val accuracyMeters: Double? = null,
+)
+
+@Serializable
+data class SnapItemPayload(
+  val name: String,
+  val pricePaise: Int,
+)
+
+@Serializable
+data class SnapUploadRequest(
+  val deviceId: String,
+  val transactionId: String,
+  val photoRef: String,
+  val gps: GeoPointPayload? = null,
+  val locationName: String? = null,
+  val city: String? = null,
+  val items: List<SnapItemPayload> = emptyList(),
+  val shareWith: List<String> = emptyList(),
+  val ttlSeconds: Int? = null,
+)
+
+@Serializable
+data class MediaUploadIntentRequest(
+  val purpose: String,
+  val fileName: String,
+  val mimeType: String,
+)
+
+@Serializable
+data class MediaUploadIntentResponse(
+  val id: String,
+  val uploadUrl: String,
+  val mediaRef: String,
+  val mimeType: String,
+  val status: String,
+)
+
+@Serializable
+data class MediaUploadConfirmRequest(
+  val uploadIntentId: String,
+)
+
+@Serializable
+data class SnapExtractionRequest(
+  val mediaRef: String,
+  val merchantLabel: String? = null,
+  val amountPaise: Int? = null,
+)
+
+@Serializable
+data class SnapExtractionResponse(
+  val items: List<SnapItemPayload>,
+  val confidence: Double,
+  val notes: List<String>,
+)
+
+@Serializable
+data class LedgerEntryPayload(
+  val id: String,
+  val merchantLabel: String,
+  val category: String,
+  val totalAmountPaise: Int? = null,
+)
+
+@Serializable
+data class SnapUploadResponse(
+  @SerialName("ledgerEntry") val ledgerEntry: LedgerEntryPayload,
+  val shareId: String? = null,
+)
+
+@Serializable
+data class DeviceRegistrationRequest(
+  val deviceId: String,
+  val platform: String,
+  val label: String? = null,
+)
+
+@Serializable
+data class DeviceRegistrationResponse(
+  val id: String,
+  val platform: String,
+  val label: String? = null,
+)
+
+data class PreparedSnapDraft(
+  val transactionId: String,
+  val mediaRef: String,
+  val suggestedItems: List<SnapItemPayload>,
+  val confidence: Double,
+  val notes: List<String>,
+)
