@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import com.socialfinance.copilot.data.CopilotRepository
 import com.socialfinance.copilot.data.LocationProvider
@@ -61,6 +62,7 @@ class SnapComposerActivity : AppCompatActivity() {
     binding.promptHeadline.text = promptHeadline
     binding.promptSubtext.text = promptSubtext
     addReviewItemRow()
+    updateReviewSummary()
     binding.addItemButton.setOnClickListener {
       addReviewItemRow()
     }
@@ -80,12 +82,18 @@ class SnapComposerActivity : AppCompatActivity() {
           return@launch
         }
 
-        val gps = locationProvider.getLastKnownPoint()
-        val reviewedItems = collectReviewedItems().ifEmpty {
-          draft.suggestedItems.ifEmpty {
-            listOf(SnapItemPayload(name = "Scanned purchase", pricePaise = 0))
-          }
+        val reviewedItems = collectReviewedItems()
+        if (reviewedItems.isEmpty()) {
+          Toast.makeText(
+            this@SnapComposerActivity,
+            getString(R.string.review_row_required),
+            Toast.LENGTH_SHORT,
+          ).show()
+          return@launch
         }
+
+        val gps = locationProvider.getLastKnownPoint()
+        setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_submitting))
         val result = repository.submitSnapDraft(
           preparedDraft = draft,
           reviewedItems = reviewedItems,
@@ -100,6 +108,8 @@ class SnapComposerActivity : AppCompatActivity() {
 
         if (result.isSuccess) {
           finish()
+        } else {
+          setSubmitState(isBusy = false, enableSubmit = true, hint = getString(R.string.submit_hint_ready))
         }
       }
     }
@@ -108,7 +118,7 @@ class SnapComposerActivity : AppCompatActivity() {
   private fun prepareDraftFromCapture() {
     val photoUri = capturedPhotoUri ?: return
     binding.captureStatus.text = getString(R.string.preparing_draft)
-    binding.submitSnapButton.isEnabled = false
+    setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_loading))
 
     lifecycleScope.launch {
       val result = repository.prepareSnapDraft(
@@ -127,10 +137,11 @@ class SnapComposerActivity : AppCompatActivity() {
           draft.notes.joinToString(", "),
         )
         binding.captureStatus.text = getString(R.string.photo_captured_ready)
-        binding.submitSnapButton.isEnabled = true
+        updateReviewSummary()
+        setSubmitState(isBusy = false, enableSubmit = true, hint = getString(R.string.submit_hint_ready))
       }.onFailure {
         binding.extractionStatus.text = getString(R.string.extraction_failed)
-        binding.submitSnapButton.isEnabled = false
+        setSubmitState(isBusy = false, enableSubmit = false, hint = getString(R.string.extract_before_submit))
       }
     }
   }
@@ -145,6 +156,7 @@ class SnapComposerActivity : AppCompatActivity() {
     binding.itemRowsContainer.removeAllViews()
     val source = items.ifEmpty { listOf(SnapItemPayload("Scanned purchase", 0)) }
     source.forEach { item -> addReviewItemRow(item) }
+    updateReviewSummary()
   }
 
   private fun addReviewItemRow(item: SnapItemPayload? = null) {
@@ -159,14 +171,24 @@ class SnapComposerActivity : AppCompatActivity() {
       priceInput.setText(String.format("%.2f", initialPricePaise / 100.0))
     }
 
+    nameInput.doAfterTextChanged {
+      updateReviewSummary()
+    }
+    priceInput.doAfterTextChanged {
+      updateReviewSummary()
+    }
+
     removeButton.setOnClickListener {
       binding.itemRowsContainer.removeView(row)
       if (binding.itemRowsContainer.childCount == 0) {
         addReviewItemRow()
+      } else {
+        updateReviewSummary()
       }
     }
 
     binding.itemRowsContainer.addView(row)
+    updateReviewSummary()
   }
 
   private fun collectReviewedItems(): List<SnapItemPayload> {
@@ -187,6 +209,36 @@ class SnapComposerActivity : AppCompatActivity() {
         }
       }
     }
+  }
+
+  private fun updateReviewSummary() {
+    val reviewedItems = collectReviewedItems()
+    val totalPaise = reviewedItems.sumOf { it.pricePaise }
+
+    binding.reviewItemCount.text = if (reviewedItems.isEmpty()) {
+      getString(R.string.review_items_count_empty)
+    } else {
+      getString(R.string.review_items_count, reviewedItems.size)
+    }
+
+    binding.reviewTotalAmount.text = if (reviewedItems.isEmpty()) {
+      getString(R.string.review_total_amount_empty)
+    } else {
+      getString(R.string.review_total_amount, totalPaise / 100.0)
+    }
+
+    binding.submitSnapButton.text = if (preparedDraft != null && reviewedItems.isNotEmpty()) {
+      getString(R.string.submit_snap_with_total, totalPaise / 100.0)
+    } else {
+      getString(R.string.submit_snap)
+    }
+  }
+
+  private fun setSubmitState(isBusy: Boolean, enableSubmit: Boolean, hint: String) {
+    binding.capturePhotoButton.isEnabled = !isBusy
+    binding.addItemButton.isEnabled = !isBusy
+    binding.submitSnapButton.isEnabled = enableSubmit
+    binding.submitHint.text = hint
   }
 
   companion object {
