@@ -23,7 +23,7 @@ import {
 } from "../domain/merchants/intelligence.js";
 import { parseNotificationText } from "../domain/notifications/parser.js";
 import { createEphemeralShare, markShareViewed } from "../domain/social/ephemeral.js";
-import { extractSnapDraft, scanTextFromImage } from "../domain/vision/extraction.js";
+import { extractSnapDraft } from "../domain/vision/extraction.js";
 import { createId } from "../lib/id.js";
 import { hasUploadedMedia } from "../lib/media-storage.js";
 import type { PersistenceAdapter } from "../persistence/types.js";
@@ -324,30 +324,18 @@ export class SocialFinanceCopilotService {
     if (uploadIntent && uploadIntent.status === "uploaded") {
       const uploaded = await hasUploadedMedia(uploadIntent.storagePath);
       if (uploaded) {
-        try {
-          const ocr = await scanTextFromImage(uploadIntent.storagePath);
-          const extracted = extractSnapDraft({
-            merchantLabel: input.merchantLabel,
-            amountPaise: input.amountPaise,
-            ocrText: ocr.text,
-            ocrConfidence: ocr.confidence,
-          });
-
-          return {
-            ...extracted,
-            notes: [...ocr.notes, ...extracted.notes],
-          };
-        } catch {
-          const fallback = extractSnapDraft(input);
-          return {
-            ...fallback,
-            notes: ["ocr-read-failed", ...fallback.notes],
-          };
-        }
+        return extractSnapDraft({
+          filePath: uploadIntent.storagePath,
+          merchantLabel: input.merchantLabel,
+          amountPaise: input.amountPaise,
+        });
       }
     }
 
-    return extractSnapDraft(input);
+    return extractSnapDraft({
+      merchantLabel: input.merchantLabel,
+      amountPaise: input.amountPaise,
+    });
   }
 
   private async resolveMerchantProfile(parsed: ParsedNotification): Promise<MerchantProfile | undefined> {

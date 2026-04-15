@@ -171,7 +171,7 @@ The current scaffold verifies that the uploaded file exists on local storage and
 
 ### `POST /api/vision/extract-snap`
 
-Use this after upload confirmation and before the final snap submission. The backend now tries OCR on the uploaded image first and falls back to merchant heuristics when the image is unreadable or lacks useful text.
+Use this after upload confirmation and before the final snap submission. The backend now sends the uploaded image to an OpenAI vision model when `OPENAI_API_KEY` is configured and falls back to lightweight merchant heuristics when the API is unavailable.
 
 Request:
 
@@ -193,8 +193,8 @@ Response:
       "pricePaise": 4000
     }
   ],
-  "confidence": 0.52,
-  "notes": ["tesseract-eng", "ocr-text-detected", "ocr-items:1"]
+  "confidence": 0.91,
+  "notes": ["openai-vision-primary"]
 }
 ```
 

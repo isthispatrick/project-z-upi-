@@ -40,6 +40,7 @@ The long-term moat is the merchant intelligence graph:
 - Validation/contracts: Zod
 - Persistence: Postgres-ready adapter with in-memory fallback
 - SMS parser: `transaction-sms-parser` for Indian bank SMS coverage plus local fallback logic
+- Vision extraction: OpenAI Responses API with image input, structured JSON output, and heuristic fallback
 - Tests: Vitest
 - Storage today: Postgres when `DATABASE_URL` is set, otherwise in-memory fallback
 - Storage later: Postgres + Redis/job queue
@@ -72,7 +73,7 @@ The long-term moat is the merchant intelligence graph:
 - `PUT /uploads/:uploadIntentId?token=...`
   Accepts the uploaded image bytes and stores them in the local `uploads/` folder as a stand-in for object storage.
 - `POST /api/vision/extract-snap`
-  Runs server-side OCR against the uploaded snap when possible, then falls back to merchant heuristics so the mobile client can prefill the expense.
+  Runs OpenAI vision extraction against the uploaded snap when `OPENAI_API_KEY` is configured, then falls back to lightweight merchant heuristics if the API is unavailable.
 - `POST /api/snaps`
   Accepts the snap draft contract, creates a ledger entry, and optionally creates an ephemeral share.
 - `GET /api/merchants/resolve?vpa=...`
@@ -160,6 +161,13 @@ To enable Google sign-in verification:
 GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ```
 
+To enable vision-based snap extraction:
+
+```bash
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_VISION_MODEL=gpt-4o
+```
+
 ### Android
 
 Open the `android/` folder in Android Studio. The scaffold currently points to:
@@ -177,7 +185,7 @@ GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ## Recommended Next Milestones
 
 1. Move from the current JSON-payload Postgres adapter to normalized Postgres models for transactions, merchants, shares, bounties, media uploads, and users.
-2. Deepen the current server-side OCR route into a stronger vision pipeline with better item/price detection and menu understanding.
+2. Improve the current OpenAI vision extraction prompt and response validation for better item/price detection and menu understanding.
 3. Replace local upload storage with Cloudinary or another object store plus signed upload URLs.
 4. Add image compression, retry logic, and background media sync on Android.
 5. Deepen auth from Google-linked device identity into real user sessions and onboarding.
