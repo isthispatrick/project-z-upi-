@@ -75,7 +75,7 @@ The long-term moat is the merchant intelligence graph:
 - `POST /api/media/confirm`
   Marks a client-side upload as completed before the ledger references that media.
 - `PUT /uploads/:uploadIntentId?token=...`
-  Accepts uploaded image bytes and persists them into Cloudflare R2 when configured, otherwise to local disk for development.
+  Exists only as the local-development fallback target. In beta mode, upload intents return a presigned Cloudflare R2 URL so Android uploads bytes directly to object storage.
 - `POST /api/vision/extract-snap`
   Runs OpenAI vision extraction against the uploaded snap when `OPENAI_API_KEY` is configured, then falls back to lightweight merchant heuristics if the API is unavailable.
 - `POST /api/snaps`
@@ -211,7 +211,7 @@ GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 - The Android scaffold is created but not compiled in this environment because no Android SDK/Gradle wrapper was set up here.
 - Google sign-in requires a valid `GOOGLE_WEB_CLIENT_ID` in both the backend environment and Android Gradle properties.
 - The backend is verified with tests and a live HTTP smoke request.
-- The Android client captures a local image, uploads it through the backend, and the backend now writes to Cloudflare R2 when configured.
+- The Android client captures a local image and uploads it directly to Cloudflare R2 through a presigned URL when R2 is configured. The backend only orchestrates keys and confirms object existence afterward.
 - In-memory persistence still exists for isolated local tests, but beta environments should run with `REQUIRE_POSTGRES=true`.
 
 ## If Someone New Takes Over

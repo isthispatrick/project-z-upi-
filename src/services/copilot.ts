@@ -307,7 +307,7 @@ export class SocialFinanceCopilotService {
     fileName: string;
     mimeType: string;
   }) {
-    const intent = createMediaUploadIntent(input);
+    const intent = await createMediaUploadIntent(input);
     await this.store.saveMediaUploadIntent(intent);
     return intent;
   }

@@ -15,6 +15,7 @@ describe("media upload contract", () => {
 
     expect(intent.status).toBe("pending");
     expect(intent.mediaRef).toContain("media://");
+    expect(intent.uploadUrl).toContain(`/uploads/${intent.id}?token=`);
 
     await persistUploadedMedia(intent.id, intent.fileName, Buffer.from("fake-image"));
 

@@ -7,6 +7,8 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import type { MediaUploadIntent } from "../domain/types.js";
 import { loadEnv } from "../config/env.js";
 
 const uploadsRoot = path.resolve(process.cwd(), "uploads");
@@ -41,6 +43,24 @@ export function buildUploadFilePath(uploadIntentId: string, fileName: string): s
   }
 
   return path.join(uploadsRoot, uploadIntentId, fileName);
+}
+
+export async function buildUploadUrl(intent: Pick<MediaUploadIntent, "id" | "fileName" | "mimeType" | "storagePath" | "uploadToken">): Promise<string> {
+  const r2 = getR2Config();
+
+  if (r2) {
+    return getSignedUrl(
+      r2.client,
+      new PutObjectCommand({
+        Bucket: r2.bucket,
+        Key: intent.storagePath,
+        ContentType: intent.mimeType,
+      }),
+      { expiresIn: 15 * 60 },
+    );
+  }
+
+  return `/uploads/${intent.id}?token=${encodeURIComponent(intent.uploadToken)}`;
 }
 
 export async function persistUploadedMedia(

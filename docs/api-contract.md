@@ -189,7 +189,7 @@ Response:
 
 ### `PUT /uploads/:uploadIntentId?token=...`
 
-Use the returned `uploadUrl` as the direct upload target. The backend now writes those bytes into Cloudflare R2 when the R2 environment variables are configured, and falls back to local disk only for development.
+Use the returned `uploadUrl` as the direct upload target. When R2 is configured, this is a presigned Cloudflare R2 URL so the Android client uploads bytes straight to object storage without proxying through the Node.js API. The relative `/uploads/...` route remains only for local development.
 
 Request body:
 
