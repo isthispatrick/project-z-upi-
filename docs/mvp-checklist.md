@@ -11,7 +11,7 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 - Merchant/VPA memory graph scaffold
 - Snap upload contract
 - Local media upload target
-- Heuristic snap extraction draft API
+- Server-side OCR-backed snap extraction with heuristic fallback
 - Editable extracted-items review flow on Android
 - Ledger creation API
 - Basic ledger listing API and Android history screen scaffold
@@ -24,7 +24,7 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 
 ### Critical
 
-- OCR-grade snap extraction pipeline that turns uploaded media into reliable draft items
+- Better OCR-grade snap extraction pipeline that turns uploaded media into reliable draft items
 - Real merchant mapping persistence across app restarts
 
 ### Important

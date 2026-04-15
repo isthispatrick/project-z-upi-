@@ -115,14 +115,14 @@ export async function createApp() {
     }
   });
 
-  app.post("/api/vision/extract-snap", (request, response) => {
+  app.post("/api/vision/extract-snap", async (request, response) => {
     const parsed = snapExtractionSchema.safeParse(request.body);
     if (!parsed.success) {
       response.status(400).json({ error: parsed.error.flatten() });
       return;
     }
 
-    response.json(service.extractSnapData(parsed.data));
+    response.json(await service.extractSnapData(parsed.data));
   });
 
   app.put("/uploads/:uploadIntentId", express.raw({ type: "*/*", limit: "15mb" }), async (request, response) => {

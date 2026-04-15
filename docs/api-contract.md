@@ -171,7 +171,7 @@ The current scaffold verifies that the uploaded file exists on local storage and
 
 ### `POST /api/vision/extract-snap`
 
-Use this after upload confirmation and before the final snap submission.
+Use this after upload confirmation and before the final snap submission. The backend now tries OCR on the uploaded image first and falls back to merchant heuristics when the image is unreadable or lacks useful text.
 
 Request:
 
@@ -194,7 +194,7 @@ Response:
     }
   ],
   "confidence": 0.52,
-  "notes": ["heuristic-cafe-default"]
+  "notes": ["tesseract-eng", "ocr-text-detected", "ocr-items:1"]
 }
 ```
 

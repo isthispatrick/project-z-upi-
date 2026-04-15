@@ -72,7 +72,7 @@ The long-term moat is the merchant intelligence graph:
 - `PUT /uploads/:uploadIntentId?token=...`
   Accepts the uploaded image bytes and stores them in the local `uploads/` folder as a stand-in for object storage.
 - `POST /api/vision/extract-snap`
-  Returns heuristic draft line items from the uploaded snap so the mobile client can prefill the expense.
+  Runs server-side OCR against the uploaded snap when possible, then falls back to merchant heuristics so the mobile client can prefill the expense.
 - `POST /api/snaps`
   Accepts the snap draft contract, creates a ledger entry, and optionally creates an ephemeral share.
 - `GET /api/merchants/resolve?vpa=...`
@@ -177,7 +177,7 @@ GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ## Recommended Next Milestones
 
 1. Move from the current JSON-payload Postgres adapter to normalized Postgres models for transactions, merchants, shares, bounties, media uploads, and users.
-2. Replace the heuristic extraction route with a real server-side OCR and vision pipeline.
+2. Deepen the current server-side OCR route into a stronger vision pipeline with better item/price detection and menu understanding.
 3. Replace local upload storage with Cloudinary or another object store plus signed upload URLs.
 4. Add image compression, retry logic, and background media sync on Android.
 5. Deepen auth from Google-linked device identity into real user sessions and onboarding.

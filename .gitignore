@@ -8,5 +8,7 @@ local.properties
 android/.gradle
 android/build
 android/app/build
+android/gradle/gradle-daemon-jvm.properties
+android/gradle/libs.versions.toml
 uploads
 references

@@ -20,4 +20,20 @@ describe("extractSnapDraft", () => {
 
     expect(result.items[0]?.name).toBe("Scanned purchase");
   });
+
+  it("parses OCR text into draft line items", () => {
+    const result = extractSnapDraft({
+      merchantLabel: "Tapri Junction",
+      amountPaise: 11000,
+      ocrText: "Masala Dosa Rs 60\nFilter Coffee Rs 50\nTOTAL Rs 110",
+      ocrConfidence: 0.88,
+    });
+
+    expect(result.items).toEqual([
+      { name: "Masala Dosa", pricePaise: 6000 },
+      { name: "Filter Coffee", pricePaise: 5000 },
+    ]);
+    expect(result.notes).toContain("ocr-text-detected");
+    expect(result.confidence).toBeGreaterThan(0.7);
+  });
 });
