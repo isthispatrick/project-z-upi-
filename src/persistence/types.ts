@@ -6,6 +6,7 @@ import type {
   MediaUploadIntent,
   MerchantProfile,
   Transaction,
+  UserProfile,
 } from "../domain/types.js";
 
 export interface PersistenceAdapter {
@@ -14,6 +15,9 @@ export interface PersistenceAdapter {
   saveTransaction(transaction: Transaction): Promise<void>;
   getDevice(id: string): Promise<DeviceProfile | undefined>;
   saveDevice(device: DeviceProfile): Promise<void>;
+  getUser(id: string): Promise<UserProfile | undefined>;
+  findUserByProvider(provider: UserProfile["authProvider"], providerUserId: string): Promise<UserProfile | undefined>;
+  saveUser(user: UserProfile): Promise<void>;
   getMerchant(vpa: string): Promise<MerchantProfile | undefined>;
   saveMerchant(merchant: MerchantProfile): Promise<void>;
   listMerchants(): Promise<MerchantProfile[]>;

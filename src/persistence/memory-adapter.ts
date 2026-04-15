@@ -6,12 +6,14 @@ import type {
   MediaUploadIntent,
   MerchantProfile,
   Transaction,
+  UserProfile,
 } from "../domain/types.js";
 import type { PersistenceAdapter } from "./types.js";
 
 export class MemoryPersistenceAdapter implements PersistenceAdapter {
   readonly transactions = new Map<string, Transaction>();
   readonly devices = new Map<string, DeviceProfile>();
+  readonly users = new Map<string, UserProfile>();
   readonly merchants = new Map<string, MerchantProfile>();
   readonly ledgerEntries = new Map<string, LedgerEntry>();
   readonly shares = new Map<string, EphemeralShare>();
@@ -34,6 +36,23 @@ export class MemoryPersistenceAdapter implements PersistenceAdapter {
 
   async saveDevice(device: DeviceProfile): Promise<void> {
     this.devices.set(device.id, device);
+  }
+
+  async getUser(id: string): Promise<UserProfile | undefined> {
+    return this.users.get(id);
+  }
+
+  async findUserByProvider(
+    provider: UserProfile["authProvider"],
+    providerUserId: string,
+  ): Promise<UserProfile | undefined> {
+    return [...this.users.values()].find(
+      (user) => user.authProvider === provider && user.providerUserId === providerUserId,
+    );
+  }
+
+  async saveUser(user: UserProfile): Promise<void> {
+    this.users.set(user.id, user);
   }
 
   async getMerchant(vpa: string): Promise<MerchantProfile | undefined> {

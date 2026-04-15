@@ -7,6 +7,7 @@ import type {
   MediaUploadIntent,
   MerchantProfile,
   Transaction,
+  UserProfile,
 } from "../domain/types.js";
 import type { PersistenceAdapter } from "./types.js";
 
@@ -25,6 +26,10 @@ export class PostgresPersistenceAdapter implements PersistenceAdapter {
         payload JSONB NOT NULL
       );
       CREATE TABLE IF NOT EXISTS devices (
+        id TEXT PRIMARY KEY,
+        payload JSONB NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         payload JSONB NOT NULL
       );
@@ -61,6 +66,25 @@ export class PostgresPersistenceAdapter implements PersistenceAdapter {
 
   async saveDevice(device: DeviceProfile): Promise<void> {
     await this.upsert("devices", device.id, device);
+  }
+
+  async getUser(id: string): Promise<UserProfile | undefined> {
+    return this.getById<UserProfile>("users", id);
+  }
+
+  async findUserByProvider(
+    provider: UserProfile["authProvider"],
+    providerUserId: string,
+  ): Promise<UserProfile | undefined> {
+    const result = await this.client.query(
+      "SELECT payload FROM users WHERE payload->>'authProvider' = $1 AND payload->>'providerUserId' = $2 LIMIT 1",
+      [provider, providerUserId],
+    );
+    return result.rows[0]?.payload as UserProfile | undefined;
+  }
+
+  async saveUser(user: UserProfile): Promise<void> {
+    await this.upsert("users", user.id, user);
   }
 
   async getMerchant(vpa: string): Promise<MerchantProfile | undefined> {

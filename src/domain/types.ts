@@ -145,6 +145,18 @@ export interface DeviceProfile {
   id: string;
   platform: "ANDROID";
   label?: string;
+  userId?: string;
+  createdAt: string;
+  lastSeenAt: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName?: string;
+  photoUrl?: string;
+  authProvider: "GOOGLE";
+  providerUserId: string;
   createdAt: string;
   lastSeenAt: string;
 }

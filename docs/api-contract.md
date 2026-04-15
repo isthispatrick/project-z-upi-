@@ -49,6 +49,73 @@ Response shape:
 }
 ```
 
+## Device registration
+
+### `POST /api/devices/register`
+
+Use this once per install launch so the backend can associate transactions and ledger entries with a stable Android device profile.
+
+Request:
+
+```json
+{
+  "deviceId": "device_2d8bc3a0",
+  "platform": "ANDROID",
+  "label": "Pixel 8"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "device_2d8bc3a0",
+  "platform": "ANDROID",
+  "label": "Pixel 8",
+  "createdAt": "2026-04-15T05:20:00.000Z",
+  "lastSeenAt": "2026-04-15T05:20:00.000Z"
+}
+```
+
+## Google auth
+
+### `POST /api/auth/google`
+
+Use this after Android Google sign-in returns an ID token. The backend verifies the token against `GOOGLE_WEB_CLIENT_ID`, creates or updates a user profile, and links that user to the current device.
+
+Request:
+
+```json
+{
+  "deviceId": "device_2d8bc3a0",
+  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+}
+```
+
+Response:
+
+```json
+{
+  "user": {
+    "id": "user_xxx",
+    "email": "shrey@example.com",
+    "displayName": "Shrey",
+    "photoUrl": "https://lh3.googleusercontent.com/a/example",
+    "authProvider": "GOOGLE",
+    "providerUserId": "109876543210987654321",
+    "createdAt": "2026-04-15T05:25:00.000Z",
+    "lastSeenAt": "2026-04-15T05:25:00.000Z"
+  },
+  "device": {
+    "id": "device_2d8bc3a0",
+    "platform": "ANDROID",
+    "userId": "user_xxx",
+    "createdAt": "2026-04-15T05:20:00.000Z",
+    "lastSeenAt": "2026-04-15T05:25:00.000Z"
+  }
+}
+```
+
 ## Media upload
 
 ### `POST /api/media/upload-intents`
@@ -141,6 +208,7 @@ Request:
 
 ```json
 {
+  "deviceId": "device_2d8bc3a0",
   "transactionId": "txn_xxx",
   "photoRef": "media://media_xxx/snap-1713182332.jpg",
   "gps": {
@@ -180,6 +248,12 @@ Response:
 ### `GET /api/merchants/resolve?vpa=newcafe.blr@icici`
 
 Returns the stored merchant memory for a known VPA.
+
+## Ledger history
+
+### `GET /api/ledger?deviceId=device_2d8bc3a0`
+
+Returns device-scoped ledger entries for the Android client history screen.
 
 ## Bounty submission
 
@@ -241,15 +315,18 @@ When all intended viewers have opened the share, the backend marks it as wiped w
 
 ## Android snap flow
 
-1. Capture payment notification.
-2. Call `/api/notifications/ingest`.
-3. Open snap composer.
-4. Capture photo locally with `FileProvider`.
-5. Call `/api/media/upload-intents`.
-6. `PUT` the media bytes to the returned target.
-7. Call `/api/media/confirm`.
-8. Call `/api/vision/extract-snap`.
-9. Submit `/api/snaps` with the returned `mediaRef` and extracted items.
+1. Register the current device with `/api/devices/register`.
+2. Optionally sign in with Google and exchange the ID token through `/api/auth/google`.
+3. Capture payment notification.
+4. Call `/api/notifications/ingest`.
+5. Open snap composer.
+6. Capture photo locally with `FileProvider`.
+7. Call `/api/media/upload-intents`.
+8. `PUT` the media bytes to the returned target.
+9. Call `/api/media/confirm`.
+10. Call `/api/vision/extract-snap`.
+11. Let the user edit extracted draft items.
+12. Submit `/api/snaps` with the returned `mediaRef` and reviewed items.
 
 ## Source of truth
 

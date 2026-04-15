@@ -1,9 +1,11 @@
 import express from "express";
+import { loadEnv } from "./config/env.js";
 import { createPersistenceAdapter } from "./persistence/factory.js";
 import { persistUploadedMedia } from "./lib/media-storage.js";
 import {
   bountySubmissionSchema,
   deviceRegistrationSchema,
+  googleAuthSchema,
   ingestNotificationSchema,
   mediaUploadConfirmSchema,
   mediaUploadIntentSchema,
@@ -12,11 +14,14 @@ import {
   snapUploadSchema,
 } from "./contracts/api.js";
 import { SocialFinanceCopilotService } from "./services/copilot.js";
+import { GoogleAuthService } from "./services/google-auth.js";
 
 export async function createApp() {
   const app = express();
   const store = await createPersistenceAdapter();
   const service = new SocialFinanceCopilotService(store);
+  const env = loadEnv();
+  const googleAuthService = new GoogleAuthService(env.googleWebClientId);
 
   app.use(express.json());
 
@@ -46,6 +51,26 @@ export async function createApp() {
     }
 
     response.status(201).json(await service.registerDevice(parsed.data));
+  });
+
+  app.post("/api/auth/google", async (request, response) => {
+    const parsed = googleAuthSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const verifiedUser = await googleAuthService.verifyIdToken(parsed.data.idToken);
+      response.status(201).json(await service.signInWithGoogle({
+        deviceId: parsed.data.deviceId,
+        verifiedUser,
+      }));
+    } catch (error) {
+      response.status(401).json({
+        error: error instanceof Error ? error.message : "Google authentication failed",
+      });
+    }
   });
 
   app.post("/api/snaps", async (request, response) => {

@@ -4,6 +4,12 @@
     <string name="main_subtitle">Listens for UPI notifications, sends them to the copilot backend, and opens a snap composer with the AI prompt.</string>
     <string name="notifications_enabled">Notification access ready</string>
     <string name="notifications_disabled">Grant notification access to begin UPI ingestion</string>
+    <string name="google_sign_in">Sign in with Google</string>
+    <string name="google_auth_waiting">Google sign-in not connected yet</string>
+    <string name="google_auth_not_configured">Add GOOGLE_WEB_CLIENT_ID in gradle.properties to enable Google sign-in</string>
+    <string name="google_auth_missing_token">Google sign-in succeeded, but no ID token was returned</string>
+    <string name="google_auth_success">Signed in as %1$s</string>
+    <string name="google_auth_failed">Google sign-in failed</string>
     <string name="open_listener_settings">Open notification listener settings</string>
     <string name="open_location_settings">Open location settings</string>
     <string name="open_docs">Open Android notification docs</string>

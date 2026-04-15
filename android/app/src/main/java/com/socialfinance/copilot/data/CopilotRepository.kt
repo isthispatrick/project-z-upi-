@@ -148,6 +148,21 @@ class CopilotRepository(context: Context) {
     }
   }
 
+  suspend fun signInWithGoogle(idToken: String): Result<GoogleAuthResponse> {
+    return withContext(Dispatchers.IO) {
+      runCatching {
+        post(
+          "api/auth/google",
+          GoogleAuthRequest(
+            deviceId = deviceIdentityStore.getOrCreateDeviceId(),
+            idToken = idToken,
+          ),
+          GoogleAuthResponse.serializer(),
+        )
+      }
+    }
+  }
+
   suspend fun submitBountyDraft(
     merchantVpa: String,
     type: String,
@@ -238,6 +253,7 @@ class CopilotRepository(context: Context) {
   ): T {
     val body = when (payload) {
       is IngestNotificationRequest -> json.encodeToString(IngestNotificationRequest.serializer(), payload)
+      is GoogleAuthRequest -> json.encodeToString(GoogleAuthRequest.serializer(), payload)
       is DeviceRegistrationRequest -> json.encodeToString(DeviceRegistrationRequest.serializer(), payload)
       is MediaUploadIntentRequest -> json.encodeToString(MediaUploadIntentRequest.serializer(), payload)
       is MediaUploadConfirmRequest -> json.encodeToString(MediaUploadConfirmRequest.serializer(), payload)

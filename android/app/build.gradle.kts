@@ -17,6 +17,11 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+    buildConfigField(
+      "String",
+      "GOOGLE_WEB_CLIENT_ID",
+      "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") as String? ?: ""}\"",
+    )
   }
 
   buildTypes {
@@ -53,6 +58,7 @@ dependencies {
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
   implementation("androidx.work:work-runtime-ktx:2.10.0")
   implementation("com.google.android.gms:play-services-location:21.3.0")
+  implementation("com.google.android.gms:play-services-auth:21.2.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
   implementation("com.squareup.okhttp3:okhttp:4.12.0")

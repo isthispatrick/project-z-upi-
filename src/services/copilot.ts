@@ -8,6 +8,7 @@ import type {
   ParsedNotification,
   SnapInput,
   Transaction,
+  UserProfile,
 } from "../domain/types.js";
 import { verifyBountySubmission } from "../domain/bounties/verification.js";
 import { createMediaUploadIntent } from "../domain/media/upload.js";
@@ -24,6 +25,7 @@ import { extractSnapDraft } from "../domain/vision/extraction.js";
 import { createId } from "../lib/id.js";
 import { hasUploadedMedia } from "../lib/media-storage.js";
 import type { PersistenceAdapter } from "../persistence/types.js";
+import type { VerifiedGoogleUser } from "./google-auth.js";
 
 export class SocialFinanceCopilotService {
   constructor(private readonly store: PersistenceAdapter) {}
@@ -223,6 +225,48 @@ export class SocialFinanceCopilotService {
 
   listLedgerEntries(deviceId: string) {
     return this.store.listLedgerEntriesByDevice(deviceId);
+  }
+
+  async signInWithGoogle(input: {
+    deviceId: string;
+    verifiedUser: VerifiedGoogleUser;
+  }): Promise<{ user: UserProfile; device: DeviceProfile }> {
+    const now = new Date().toISOString();
+    const existingUser = await this.store.findUserByProvider("GOOGLE", input.verifiedUser.providerUserId);
+    const user: UserProfile = existingUser
+      ? {
+          ...existingUser,
+          email: input.verifiedUser.email,
+          displayName: input.verifiedUser.displayName,
+          photoUrl: input.verifiedUser.photoUrl,
+          lastSeenAt: now,
+        }
+      : {
+          id: createId("user"),
+          email: input.verifiedUser.email,
+          displayName: input.verifiedUser.displayName,
+          photoUrl: input.verifiedUser.photoUrl,
+          authProvider: "GOOGLE",
+          providerUserId: input.verifiedUser.providerUserId,
+          createdAt: now,
+          lastSeenAt: now,
+        };
+
+    await this.store.saveUser(user);
+
+    const existingDevice = await this.store.getDevice(input.deviceId);
+    const device: DeviceProfile = existingDevice
+      ? { ...existingDevice, userId: user.id, lastSeenAt: now }
+      : {
+          id: input.deviceId,
+          platform: "ANDROID",
+          userId: user.id,
+          createdAt: now,
+          lastSeenAt: now,
+        };
+
+    await this.store.saveDevice(device);
+    return { user, device };
   }
 
   getShare(shareId: string) {

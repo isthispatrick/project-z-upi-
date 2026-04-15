@@ -6,24 +6,25 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 
 - Android notification-listener scaffold
 - Lightweight device identity registration
+- Google sign-in scaffold linked to backend device identity
 - UPI notification ingestion API
 - Merchant/VPA memory graph scaffold
 - Snap upload contract
 - Local media upload target
 - Heuristic snap extraction draft API
+- Editable extracted-items review flow on Android
 - Ledger creation API
 - Basic ledger listing API and Android history screen scaffold
 - Bounty verification scaffold
+- Bounty submission UI on Android
 - Ephemeral share lifecycle scaffold
+- Postgres-backed persistence adapter with in-memory fallback
 
 ## Remaining for MVP
 
 ### Critical
 
-- User auth beyond device identity
-- Persistent database instead of in-memory state
 - OCR-grade snap extraction pipeline that turns uploaded media into reliable draft items
-- Android flow that shows extracted draft items before submit
 - Real merchant mapping persistence across app restarts
 
 ### Important
@@ -31,8 +32,8 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 - Friend graph / share recipients
 - Real object storage instead of local `uploads/`
 - Retry and offline sync for uploads
-- Bounty submission UI on Android
 - Abuse controls for duplicate and spam bounty uploads
+- Deeper auth and onboarding beyond the current Google-linked device profile
 
 ### Nice next
 
@@ -42,9 +43,9 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 
 ## Suggested build order
 
-1. Persistent storage
-2. User auth
-3. Snap extraction draft flow
-4. Ledger history UI
-5. Bounty UI
-6. Real storage + background sync
+1. Server-side OCR
+2. Real storage + background sync
+3. Normalized Postgres models and migrations
+4. Auth and onboarding polish
+5. Friend graph
+6. Social loop refinement

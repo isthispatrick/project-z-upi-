@@ -129,6 +129,25 @@ data class DeviceRegistrationResponse(
   val label: String? = null,
 )
 
+@Serializable
+data class GoogleAuthRequest(
+  val deviceId: String,
+  val idToken: String,
+)
+
+@Serializable
+data class AuthenticatedUserPayload(
+  val id: String,
+  val email: String,
+  val displayName: String? = null,
+  val photoUrl: String? = null,
+)
+
+@Serializable
+data class GoogleAuthResponse(
+  val user: AuthenticatedUserPayload,
+)
+
 data class PreparedSnapDraft(
   val transactionId: String,
   val mediaRef: String,

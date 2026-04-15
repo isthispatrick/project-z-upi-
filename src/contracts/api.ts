@@ -72,6 +72,11 @@ export const deviceRegistrationSchema = z.object({
   label: z.string().optional(),
 });
 
+export const googleAuthSchema = z.object({
+  deviceId: z.string().min(1),
+  idToken: z.string().min(1),
+});
+
 export type IngestNotificationInput = z.infer<typeof ingestNotificationSchema>;
 export type SnapUploadInput = z.infer<typeof snapUploadSchema>;
 export type BountySubmissionInput = z.infer<typeof bountySubmissionSchema>;

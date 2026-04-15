@@ -61,6 +61,10 @@ The long-term moat is the merchant intelligence graph:
 
 - `POST /api/notifications/ingest`
   Parses raw notification text, classifies the payment, resolves known merchants, and returns a snap prompt.
+- `POST /api/devices/register`
+  Registers a stable Android installation ID and keeps the device heartbeat fresh.
+- `POST /api/auth/google`
+  Verifies a Google ID token server-side and links the signed-in user to the current device profile.
 - `POST /api/media/upload-intents`
   Creates a media upload intent for snap and bounty images and returns a stable `mediaRef`.
 - `POST /api/media/confirm`
@@ -83,10 +87,13 @@ The long-term moat is the merchant intelligence graph:
 ### Android scaffold
 
 - A launcher activity that helps testers enable the notification listener and permissions
+- Google sign-in wiring that exchanges an Android ID token for a backend user session primitive
 - A notification-listener service that filters supported UPI-related packages
 - A worker that sends raw notification text to the backend
 - A local prompt notification that opens a snap composer screen
-- A snap composer activity that captures a photo, uploads it, requests extracted draft items, and then submits `/api/snaps`
+- A snap composer activity that captures a photo, uploads it, requests extracted draft items, lets the user edit them, and then submits `/api/snaps`
+- A basic ledger history screen
+- A bounty submission screen for menu and QR-stand capture
 
 ## Key Concepts Future Teammates Need To Understand
 
@@ -145,6 +152,12 @@ To enable Postgres persistence:
 DATABASE_URL=postgres://username:password@localhost:5432/social_finance_copilot
 ```
 
+To enable Google sign-in verification:
+
+```bash
+GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+```
+
 ### Android
 
 Open the `android/` folder in Android Studio. The scaffold currently points to:
@@ -153,19 +166,26 @@ Open the `android/` folder in Android Studio. The scaffold currently points to:
 
 If you use a physical device, update `API_BASE_URL` in `android/app/build.gradle.kts`.
 
+If you want Google sign-in to work in the Android client, also set this in `android/gradle.properties`:
+
+```properties
+GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+```
+
 ## Recommended Next Milestones
 
-1. Move from the current JSON-payload Postgres adapter to normalized Postgres models for transactions, merchants, shares, bounties, and media uploads.
-2. Replace local upload storage with real object storage plus signed upload URLs.
-3. Add image compression, retry logic, and background media sync on Android.
-4. Add OCR / vision extraction for items, prices, menu text, and QR stand validation.
-5. Introduce auth, user accounts, and friend graph primitives.
+1. Move from the current JSON-payload Postgres adapter to normalized Postgres models for transactions, merchants, shares, bounties, media uploads, and users.
+2. Replace the heuristic extraction route with a real server-side OCR and vision pipeline.
+3. Replace local upload storage with Cloudinary or another object store plus signed upload URLs.
+4. Add image compression, retry logic, and background media sync on Android.
+5. Deepen auth from Google-linked device identity into real user sessions and onboarding.
 6. Add trust/risk scoring for fraudulent bounty submissions.
-7. Add analytics around streaks, social opens, and prompt conversion.
+7. Add friend graph, social opens, and prompt conversion analytics.
 
 ## Important Caveats
 
 - The Android scaffold is created but not compiled in this environment because no Android SDK/Gradle wrapper was set up here.
+- Google sign-in requires a valid `GOOGLE_WEB_CLIENT_ID` in both the backend environment and Android Gradle properties.
 - The backend is verified with tests and a live HTTP smoke request.
 - The current persistence layer is intentionally temporary.
 - The Android client now captures a local image and performs a real local upload against the backend, but production object storage still needs to replace the local `uploads/` folder.
