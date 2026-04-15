@@ -117,6 +117,13 @@ export interface MediaUploadIntent {
   storagePath: string;
 }
 
+export interface FriendLink {
+  id: string;
+  userId: string;
+  friendUserId: string;
+  createdAt: string;
+}
+
 export interface EphemeralShare {
   id: string;
   transactionId: string;

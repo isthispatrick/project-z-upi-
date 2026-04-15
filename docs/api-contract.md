@@ -116,6 +116,47 @@ Response:
 }
 ```
 
+## Friend graph
+
+### `GET /api/friends?userId=user_xxx`
+
+Returns the directed friend links for the current user.
+
+Response:
+
+```json
+[
+  {
+    "id": "friend_xxx",
+    "userId": "user_xxx",
+    "friendUserId": "user_friend_yyy",
+    "createdAt": "2026-04-15T07:10:00.000Z"
+  }
+]
+```
+
+### `POST /api/friends`
+
+Request:
+
+```json
+{
+  "userId": "user_xxx",
+  "friendUserId": "user_friend_yyy"
+}
+```
+
+Response:
+
+```json
+{
+  "id": "friend_xxx",
+  "userId": "user_xxx",
+  "friendUserId": "user_friend_yyy",
+  "createdAt": "2026-04-15T07:10:00.000Z"
+}
+```
+
 ## Media upload
 
 ### `POST /api/media/upload-intents`
@@ -140,7 +181,7 @@ Response:
   "purpose": "SNAP",
   "fileName": "snap-1713182332.jpg",
   "mimeType": "image/jpeg",
-  "uploadUrl": "https://uploads.example.com/media_xxx/snap-1713182332.jpg",
+  "uploadUrl": "http://localhost:3000/uploads/media_xxx?token=secret_upload_token",
   "mediaRef": "media://media_xxx/snap-1713182332.jpg",
   "status": "pending"
 }
@@ -148,7 +189,7 @@ Response:
 
 ### `PUT /uploads/:uploadIntentId?token=...`
 
-Use the returned `uploadUrl` as the direct upload target. The current scaffold writes bytes into the backend's local `uploads/` folder.
+Use the returned `uploadUrl` as the direct upload target. The backend now writes those bytes into Cloudflare R2 when the R2 environment variables are configured, and falls back to local disk only for development.
 
 Request body:
 
@@ -165,7 +206,7 @@ Request:
 }
 ```
 
-The current scaffold verifies that the uploaded file exists on local storage and then marks the intent as uploaded. In production, this should be backed by object storage confirmation.
+The backend verifies that the uploaded file exists in the configured storage backend and then marks the intent as uploaded.
 
 ## Snap extraction
 

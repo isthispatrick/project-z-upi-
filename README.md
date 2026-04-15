@@ -38,11 +38,11 @@ The long-term moat is the merchant intelligence graph:
 - Language: TypeScript
 - API: Express
 - Validation/contracts: Zod
-- Persistence: Postgres-ready adapter with in-memory fallback
+- Persistence: Postgres-first adapter for beta, with in-memory fallback kept only for local development
 - SMS parser: `transaction-sms-parser` for Indian bank SMS coverage plus local fallback logic
 - Vision extraction: OpenAI Responses API with image input, structured JSON output, and heuristic fallback
+- Media storage: Cloudflare R2 when configured, local disk fallback for development only
 - Tests: Vitest
-- Storage today: Postgres when `DATABASE_URL` is set, otherwise in-memory fallback
 - Storage later: Postgres + Redis/job queue
 
 ### Android client scaffold
@@ -66,12 +66,16 @@ The long-term moat is the merchant intelligence graph:
   Registers a stable Android installation ID and keeps the device heartbeat fresh.
 - `POST /api/auth/google`
   Verifies a Google ID token server-side and links the signed-in user to the current device profile.
+- `GET /api/friends?userId=...`
+  Returns the current outbound friend graph for a signed-in user.
+- `POST /api/friends`
+  Creates a directed user-to-friend link for the social snap loop.
 - `POST /api/media/upload-intents`
   Creates a media upload intent for snap and bounty images and returns a stable `mediaRef`.
 - `POST /api/media/confirm`
   Marks a client-side upload as completed before the ledger references that media.
 - `PUT /uploads/:uploadIntentId?token=...`
-  Accepts the uploaded image bytes and stores them in the local `uploads/` folder as a stand-in for object storage.
+  Accepts uploaded image bytes and persists them into Cloudflare R2 when configured, otherwise to local disk for development.
 - `POST /api/vision/extract-snap`
   Runs OpenAI vision extraction against the uploaded snap when `OPENAI_API_KEY` is configured, then falls back to lightweight merchant heuristics if the API is unavailable.
 - `POST /api/snaps`
@@ -149,10 +153,11 @@ Server runs on `http://localhost:3000`.
 
 The backend automatically loads a repo-root `.env` file during local development.
 
-To enable Postgres persistence:
+To enable Postgres persistence and fail fast if it is missing:
 
 ```bash
 DATABASE_URL=postgres://username:password@localhost:5432/social_finance_copilot
+REQUIRE_POSTGRES=true
 ```
 
 To enable Google sign-in verification:
@@ -166,6 +171,15 @@ To enable vision-based snap extraction:
 ```bash
 OPENAI_API_KEY=your-openai-api-key
 OPENAI_VISION_MODEL=gpt-4o
+```
+
+To enable Cloudflare R2-backed media storage:
+
+```bash
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_BUCKET=upi-tracker
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 ```
 
 ### Android
@@ -186,19 +200,19 @@ GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 
 1. Move from the current JSON-payload Postgres adapter to normalized Postgres models for transactions, merchants, shares, bounties, media uploads, and users.
 2. Improve the current OpenAI vision extraction prompt and response validation for better item/price detection and menu understanding.
-3. Replace local upload storage with Cloudinary or another object store plus signed upload URLs.
-4. Add image compression, retry logic, and background media sync on Android.
-5. Deepen auth from Google-linked device identity into real user sessions and onboarding.
-6. Add trust/risk scoring for fraudulent bounty submissions.
-7. Add friend graph, social opens, and prompt conversion analytics.
+3. Add image compression, retry logic, and background media sync on Android.
+4. Deepen auth from Google-linked device identity into real user sessions and onboarding.
+5. Add trust/risk scoring for fraudulent bounty submissions.
+6. Add friend graph reads into Android so users can actually target recipients from the snap flow.
+7. Add social opens, streaks, and prompt conversion analytics.
 
 ## Important Caveats
 
 - The Android scaffold is created but not compiled in this environment because no Android SDK/Gradle wrapper was set up here.
 - Google sign-in requires a valid `GOOGLE_WEB_CLIENT_ID` in both the backend environment and Android Gradle properties.
 - The backend is verified with tests and a live HTTP smoke request.
-- The current persistence layer is intentionally temporary.
-- The Android client now captures a local image and performs a real local upload against the backend, but production object storage still needs to replace the local `uploads/` folder.
+- The Android client captures a local image, uploads it through the backend, and the backend now writes to Cloudflare R2 when configured.
+- In-memory persistence still exists for isolated local tests, but beta environments should run with `REQUIRE_POSTGRES=true`.
 
 ## If Someone New Takes Over
 

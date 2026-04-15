@@ -2,6 +2,7 @@ import type {
   BountySubmission,
   DeviceProfile,
   EphemeralShare,
+  FriendLink,
   LedgerEntry,
   MediaUploadIntent,
   MerchantProfile,
@@ -14,6 +15,7 @@ export class MemoryPersistenceAdapter implements PersistenceAdapter {
   readonly transactions = new Map<string, Transaction>();
   readonly devices = new Map<string, DeviceProfile>();
   readonly users = new Map<string, UserProfile>();
+  readonly friendLinks = new Map<string, FriendLink>();
   readonly merchants = new Map<string, MerchantProfile>();
   readonly ledgerEntries = new Map<string, LedgerEntry>();
   readonly shares = new Map<string, EphemeralShare>();
@@ -53,6 +55,14 @@ export class MemoryPersistenceAdapter implements PersistenceAdapter {
 
   async saveUser(user: UserProfile): Promise<void> {
     this.users.set(user.id, user);
+  }
+
+  async addFriendLink(link: FriendLink): Promise<void> {
+    this.friendLinks.set(link.id, link);
+  }
+
+  async listFriendLinks(userId: string): Promise<FriendLink[]> {
+    return [...this.friendLinks.values()].filter((link) => link.userId === userId);
   }
 
   async getMerchant(vpa: string): Promise<MerchantProfile | undefined> {

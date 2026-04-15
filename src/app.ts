@@ -5,6 +5,7 @@ import { persistUploadedMedia } from "./lib/media-storage.js";
 import {
   bountySubmissionSchema,
   deviceRegistrationSchema,
+  friendLinkCreateSchema,
   googleAuthSchema,
   ingestNotificationSchema,
   mediaUploadConfirmSchema,
@@ -73,6 +74,26 @@ export async function createApp() {
     }
   });
 
+  app.get("/api/friends", async (request, response) => {
+    const userId = request.query.userId;
+    if (typeof userId !== "string" || userId.length === 0) {
+      response.status(400).json({ error: "Missing userId query parameter" });
+      return;
+    }
+
+    response.json(await service.listFriendLinks(userId));
+  });
+
+  app.post("/api/friends", async (request, response) => {
+    const parsed = friendLinkCreateSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: parsed.error.flatten() });
+      return;
+    }
+
+    response.status(201).json(await service.addFriendLink(parsed.data));
+  });
+
   app.post("/api/snaps", async (request, response) => {
     const parsed = snapUploadSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -139,7 +160,7 @@ export async function createApp() {
       return;
     }
 
-    await persistUploadedMedia(uploadIntent.id, uploadIntent.fileName, request.body);
+    await persistUploadedMedia(uploadIntent.id, uploadIntent.fileName, request.body, uploadIntent.mimeType);
     response.status(204).send();
   });
 

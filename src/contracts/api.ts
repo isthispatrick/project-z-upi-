@@ -77,6 +77,11 @@ export const googleAuthSchema = z.object({
   idToken: z.string().min(1),
 });
 
+export const friendLinkCreateSchema = z.object({
+  userId: z.string().min(1),
+  friendUserId: z.string().min(1),
+});
+
 export type IngestNotificationInput = z.infer<typeof ingestNotificationSchema>;
 export type SnapUploadInput = z.infer<typeof snapUploadSchema>;
 export type BountySubmissionInput = z.infer<typeof bountySubmissionSchema>;

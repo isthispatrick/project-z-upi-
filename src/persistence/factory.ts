@@ -54,18 +54,31 @@ export const seededMerchants: MerchantProfile[] = [
 
 export async function createPersistenceAdapter(): Promise<PersistenceAdapter> {
   const env = loadEnv();
+  if (env.requirePostgres && !env.databaseUrl) {
+    throw new Error("REQUIRE_POSTGRES is enabled but DATABASE_URL is not configured");
+  }
+  if (env.requirePostgres && env.databaseUrl) {
+    const adapter = new PostgresPersistenceAdapter(new Client({ connectionString: env.databaseUrl }));
+    await adapter.initialize();
+    await seedMerchants(adapter);
+    return adapter;
+  }
+
   const adapter: PersistenceAdapter = env.databaseUrl
     ? new PostgresPersistenceAdapter(new Client({ connectionString: env.databaseUrl }))
     : new MemoryPersistenceAdapter();
 
   await adapter.initialize();
+  await seedMerchants(adapter);
 
+  return adapter;
+}
+
+async function seedMerchants(adapter: PersistenceAdapter): Promise<void> {
   for (const merchant of seededMerchants) {
     const existing = await adapter.getMerchant(merchant.vpa);
     if (!existing) {
       await adapter.saveMerchant(merchant);
     }
   }
-
-  return adapter;
 }

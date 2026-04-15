@@ -3,6 +3,7 @@ import type {
   BountySubmission,
   DeviceProfile,
   ExpenseCategory,
+  FriendLink,
   LedgerEntry,
   MerchantMemoryDecision,
   MerchantProfile,
@@ -25,7 +26,7 @@ import { parseNotificationText } from "../domain/notifications/parser.js";
 import { createEphemeralShare, markShareViewed } from "../domain/social/ephemeral.js";
 import { extractSnapDraft } from "../domain/vision/extraction.js";
 import { createId } from "../lib/id.js";
-import { hasUploadedMedia } from "../lib/media-storage.js";
+import { hasUploadedMedia, readUploadedMedia } from "../lib/media-storage.js";
 import type { PersistenceAdapter } from "../persistence/types.js";
 import type { VerifiedGoogleUser } from "./google-auth.js";
 
@@ -275,6 +276,28 @@ export class SocialFinanceCopilotService {
     return { user, device };
   }
 
+  async addFriendLink(input: { userId: string; friendUserId: string }): Promise<FriendLink> {
+    const existing = await this.store.listFriendLinks(input.userId);
+    const duplicate = existing.find((link) => link.friendUserId === input.friendUserId);
+    if (duplicate) {
+      return duplicate;
+    }
+
+    const link: FriendLink = {
+      id: createId("friend"),
+      userId: input.userId,
+      friendUserId: input.friendUserId,
+      createdAt: new Date().toISOString(),
+    };
+
+    await this.store.addFriendLink(link);
+    return link;
+  }
+
+  listFriendLinks(userId: string) {
+    return this.store.listFriendLinks(userId);
+  }
+
   getShare(shareId: string) {
     return this.store.getShare(shareId);
   }
@@ -324,11 +347,19 @@ export class SocialFinanceCopilotService {
     if (uploadIntent && uploadIntent.status === "uploaded") {
       const uploaded = await hasUploadedMedia(uploadIntent.storagePath);
       if (uploaded) {
-        return extractSnapDraft({
-          filePath: uploadIntent.storagePath,
-          merchantLabel: input.merchantLabel,
-          amountPaise: input.amountPaise,
-        });
+        try {
+          const imageBytes = await readUploadedMedia(uploadIntent.storagePath);
+          return extractSnapDraft({
+            imageBytes,
+            merchantLabel: input.merchantLabel,
+            amountPaise: input.amountPaise,
+          });
+        } catch {
+          return extractSnapDraft({
+            merchantLabel: input.merchantLabel,
+            amountPaise: input.amountPaise,
+          });
+        }
       }
     }
 

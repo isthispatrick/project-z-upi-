@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import OpenAI from "openai";
 import { z } from "zod";
 import type { LedgerItem } from "../types.js";
+import { loadEnv } from "../../config/env.js";
 
 const extractionResponseSchema = z.object({
   items: z.array(
@@ -22,21 +23,26 @@ export interface SnapExtractionResult {
 
 export async function extractSnapDraft(input: {
   filePath?: string;
+  imageBytes?: Buffer;
   merchantLabel?: string;
   amountPaise?: number | null;
 }): Promise<SnapExtractionResult> {
   const heuristic = buildHeuristicFallback(input.merchantLabel, input.amountPaise);
+  const env = loadEnv();
+  const apiKey = env.openAiApiKey;
 
-  if (!input.filePath || !process.env.OPENAI_API_KEY) {
+  if ((!input.filePath && !input.imageBytes) || !apiKey) {
     return heuristic;
   }
 
   try {
-    const imageAsBase64 = await readFile(input.filePath, { encoding: "base64" });
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const imageAsBase64 = input.imageBytes
+      ? input.imageBytes.toString("base64")
+      : await readFile(input.filePath!, { encoding: "base64" });
+    const client = new OpenAI({ apiKey });
 
     const response = await client.responses.create({
-      model: process.env.OPENAI_VISION_MODEL ?? "gpt-4o",
+      model: env.openAiVisionModel ?? "gpt-4o",
       instructions: [
         "You extract purchased items from Indian merchant photos.",
         "Return strict JSON only.",

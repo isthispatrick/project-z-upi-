@@ -3,6 +3,7 @@ import type {
   BountySubmission,
   DeviceProfile,
   EphemeralShare,
+  FriendLink,
   LedgerEntry,
   MediaUploadIntent,
   MerchantProfile,
@@ -30,6 +31,10 @@ export class PostgresPersistenceAdapter implements PersistenceAdapter {
         payload JSONB NOT NULL
       );
       CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        payload JSONB NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS friend_links (
         id TEXT PRIMARY KEY,
         payload JSONB NOT NULL
       );
@@ -85,6 +90,18 @@ export class PostgresPersistenceAdapter implements PersistenceAdapter {
 
   async saveUser(user: UserProfile): Promise<void> {
     await this.upsert("users", user.id, user);
+  }
+
+  async addFriendLink(link: FriendLink): Promise<void> {
+    await this.upsert("friend_links", link.id, link);
+  }
+
+  async listFriendLinks(userId: string): Promise<FriendLink[]> {
+    const result = await this.client.query(
+      "SELECT payload FROM friend_links WHERE payload->>'userId' = $1 ORDER BY payload->>'createdAt' DESC",
+      [userId],
+    );
+    return result.rows.map((row: { payload: FriendLink }) => row.payload);
   }
 
   async getMerchant(vpa: string): Promise<MerchantProfile | undefined> {

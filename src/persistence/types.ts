@@ -2,6 +2,7 @@ import type {
   BountySubmission,
   DeviceProfile,
   EphemeralShare,
+  FriendLink,
   LedgerEntry,
   MediaUploadIntent,
   MerchantProfile,
@@ -18,6 +19,8 @@ export interface PersistenceAdapter {
   getUser(id: string): Promise<UserProfile | undefined>;
   findUserByProvider(provider: UserProfile["authProvider"], providerUserId: string): Promise<UserProfile | undefined>;
   saveUser(user: UserProfile): Promise<void>;
+  addFriendLink(link: FriendLink): Promise<void>;
+  listFriendLinks(userId: string): Promise<FriendLink[]>;
   getMerchant(vpa: string): Promise<MerchantProfile | undefined>;
   saveMerchant(merchant: MerchantProfile): Promise<void>;
   listMerchants(): Promise<MerchantProfile[]>;

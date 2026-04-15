@@ -30,4 +30,24 @@ describe("SocialFinanceCopilotService", () => {
     expect(result.memory.cacheStatus).toBe("hit");
     expect(result.memory.shouldProcessMerchantAi).toBe(false);
   });
+
+  it("deduplicates friend links per user", async () => {
+    const store = new MemoryPersistenceAdapter();
+    const service = new SocialFinanceCopilotService(store);
+
+    const first = await service.addFriendLink({
+      userId: "user_1",
+      friendUserId: "user_2",
+    });
+    const second = await service.addFriendLink({
+      userId: "user_1",
+      friendUserId: "user_2",
+    });
+
+    expect(second.id).toBe(first.id);
+
+    const friends = await service.listFriendLinks("user_1");
+    expect(friends).toHaveLength(1);
+    expect(friends[0]?.friendUserId).toBe("user_2");
+  });
 });
