@@ -27,5 +27,7 @@ describe("SocialFinanceCopilotService", () => {
     expect(result.transaction.category).toBe("CAFE");
     expect(result.transaction.deviceId).toBe("device-1");
     expect(result.prompt.headline).toContain("New Cafe");
+    expect(result.memory.cacheStatus).toBe("hit");
+    expect(result.memory.shouldProcessMerchantAi).toBe(false);
   });
 });

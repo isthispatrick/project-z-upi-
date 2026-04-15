@@ -48,6 +48,7 @@ export interface MerchantProfile {
   displayName: string;
   categoryHint: ExpenseCategory;
   resolution: MerchantResolution;
+  enrichmentState?: "cached" | "needs_enrichment" | "bounty_only";
   mappedFromCrowdCount: number;
   averageTicketSizePaise?: number;
   vibe?: string;
@@ -55,7 +56,16 @@ export interface MerchantProfile {
   city?: string;
   gps?: GeoPoint;
   firstMappedAt?: string;
+  lastAiProcessedAt?: string;
   lastSeenAt: string;
+}
+
+export interface MerchantMemoryDecision {
+  cacheStatus: "hit" | "miss";
+  promptMode: "cached_memory" | "needs_enrichment";
+  shouldProcessMerchantAi: boolean;
+  shouldRequestBounty: boolean;
+  reason: string;
 }
 
 export interface LedgerItem {

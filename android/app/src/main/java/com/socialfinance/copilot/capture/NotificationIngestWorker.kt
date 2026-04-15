@@ -9,22 +9,21 @@ class NotificationIngestWorker(
   params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
   private val repository = CopilotRepository(appContext)
+  private val pendingStore = PendingNotificationStore(appContext)
 
   override suspend fun doWork(): Result {
-    val sourceApp = inputData.getString(KEY_SOURCE_APP) ?: return Result.failure()
-    val rawText = inputData.getString(KEY_RAW_TEXT) ?: return Result.failure()
-    val capturedAt = inputData.getString(KEY_CAPTURED_AT)
+    val eventId = inputData.getString(KEY_EVENT_ID) ?: return Result.failure()
+    val event = pendingStore.get(eventId) ?: return Result.success()
 
-    val result = repository.ingestNotification(sourceApp, rawText, capturedAt)
+    val result = repository.ingestNotification(event.sourceApp, event.rawText, event.capturedAt)
     val payload = result.getOrElse { return Result.retry() }
 
     NotificationPromptPublisher(applicationContext).publish(payload)
+    pendingStore.remove(eventId)
     return Result.success()
   }
 
   companion object {
-    const val KEY_SOURCE_APP = "source_app"
-    const val KEY_RAW_TEXT = "raw_text"
-    const val KEY_CAPTURED_AT = "captured_at"
+    const val KEY_EVENT_ID = "event_id"
   }
 }

@@ -4,6 +4,7 @@ import type {
   DeviceProfile,
   ExpenseCategory,
   LedgerEntry,
+  MerchantMemoryDecision,
   MerchantProfile,
   ParsedNotification,
   SnapInput,
@@ -13,6 +14,7 @@ import type {
 import { verifyBountySubmission } from "../domain/bounties/verification.js";
 import { createMediaUploadIntent } from "../domain/media/upload.js";
 import {
+  buildMerchantMemoryDecision,
   buildSnapPrompt,
   categorizePayment,
   humanizeMerchantHandle,
@@ -39,12 +41,14 @@ export class SocialFinanceCopilotService {
     parsed: ParsedNotification;
     transaction: Transaction;
     merchant?: MerchantProfile;
+    memory: MerchantMemoryDecision;
     prompt: ReturnType<typeof buildSnapPrompt>;
   }> {
     const capturedAt = input.capturedAt ?? new Date().toISOString();
     await this.touchDevice(input.deviceId);
     const parsed = parseNotificationText(input.rawText, input.sourceApp, capturedAt);
     const merchant = await this.resolveMerchantProfile(parsed);
+    const memory = buildMerchantMemoryDecision(merchant);
     const inferredCategory = categorizePayment(parsed);
     const category =
       inferredCategory === "UNCLASSIFIED" ? merchant?.categoryHint ?? inferredCategory : inferredCategory;
@@ -70,12 +74,14 @@ export class SocialFinanceCopilotService {
       amountPaise: transaction.amountPaise,
       category,
       merchant,
+      memoryDecision: memory,
     });
 
     return {
       parsed,
       transaction,
       merchant,
+      memory,
       prompt,
     };
   }
@@ -360,6 +366,7 @@ export class SocialFinanceCopilotService {
       displayName: humanizeMerchantHandle(parsed.merchantVpa, parsed.merchantLabel),
       categoryHint: categorizePayment(parsed),
       resolution: "new",
+      enrichmentState: "needs_enrichment",
       mappedFromCrowdCount: 0,
       lastSeenAt: now,
     };

@@ -34,7 +34,7 @@
     <string name="extract_before_submit">Capture and extract a draft before submitting</string>
     <string name="extraction_waiting">Draft items will appear here after capture</string>
     <string name="extraction_failed">Could not prepare draft items from this snap</string>
-    <string name="extraction_ready">Draft ready - confidence %.2f - %s</string>
+    <string name="extraction_ready">Draft ready - confidence %1$.2f - %2$s</string>
     <string name="camera_permission_required">Camera permission is required to capture a snap</string>
     <string name="submit_snap">Submit snap draft</string>
     <string name="submit_snap_with_total">Submit Rs %1$.2f draft</string>

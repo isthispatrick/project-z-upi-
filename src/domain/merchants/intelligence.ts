@@ -1,6 +1,7 @@
 import type {
   ExpenseCategory,
   GeoPoint,
+  MerchantMemoryDecision,
   MerchantProfile,
   ParsedNotification,
   PromptCard,
@@ -71,6 +72,7 @@ export function resolveMerchantProfile(
     displayName: humanizeMerchantHandle(parsed.merchantVpa, parsed.merchantLabel),
     categoryHint: categorizePayment(parsed),
     resolution: "new",
+    enrichmentState: "needs_enrichment",
     mappedFromCrowdCount: 0,
     lastSeenAt: now,
   };
@@ -89,6 +91,7 @@ export function updateMerchantLocation(
 
   return {
     ...merchant,
+    enrichmentState: "cached",
     gps,
     locationName: locationName ?? merchant.locationName,
     city: city ?? merchant.city,
@@ -116,7 +119,45 @@ export function updateAverageTicketSize(
   return {
     ...merchant,
     averageTicketSizePaise: nextAverage,
+    enrichmentState: merchant.enrichmentState ?? "cached",
     lastSeenAt: now,
+  };
+}
+
+export function buildMerchantMemoryDecision(merchant?: MerchantProfile): MerchantMemoryDecision {
+  if (!merchant) {
+    return {
+      cacheStatus: "miss",
+      promptMode: "needs_enrichment",
+      shouldProcessMerchantAi: true,
+      shouldRequestBounty: false,
+      reason: "no-merchant-memory",
+    };
+  }
+
+  const hasMappedLocation = Boolean(merchant.gps || merchant.locationName);
+  const hasCacheableContext =
+    merchant.resolution !== "new" ||
+    hasMappedLocation ||
+    merchant.mappedFromCrowdCount > 0 ||
+    Boolean(merchant.averageTicketSizePaise);
+
+  if (hasCacheableContext) {
+    return {
+      cacheStatus: "hit",
+      promptMode: "cached_memory",
+      shouldProcessMerchantAi: false,
+      shouldRequestBounty: false,
+      reason: "merchant-memory-hit",
+    };
+  }
+
+  return {
+    cacheStatus: "miss",
+    promptMode: "needs_enrichment",
+    shouldProcessMerchantAi: true,
+    shouldRequestBounty: merchant.enrichmentState === "bounty_only",
+    reason: merchant.enrichmentState === "bounty_only" ? "bounty-requested" : "new-vpa-needs-enrichment",
   };
 }
 
@@ -125,16 +166,18 @@ function formatRupees(amountPaise: number | null): string {
     return "A payment";
   }
 
-  return `₹${(amountPaise / 100).toFixed(amountPaise % 100 === 0 ? 0 : 2)}`;
+  return `Rs.${(amountPaise / 100).toFixed(amountPaise % 100 === 0 ? 0 : 2)}`;
 }
 
 export function buildSnapPrompt(input: {
   amountPaise: number | null;
   category: ExpenseCategory;
   merchant?: MerchantProfile;
+  memoryDecision?: MerchantMemoryDecision;
 }): PromptCard {
   const amount = formatRupees(input.amountPaise);
   const merchant = input.merchant;
+  const memoryDecision = input.memoryDecision;
 
   if (merchant?.locationName) {
     return {
@@ -150,8 +193,18 @@ export function buildSnapPrompt(input: {
     };
   }
 
+  if (memoryDecision?.promptMode === "cached_memory" && merchant) {
+    return {
+      headline: `${amount} hit ${merchant.displayName}.`,
+      subtext: "Using cached merchant memory for this repeat stop. Snap only if you want fresh item detail.",
+    };
+  }
+
   return {
     headline: `${amount} just moved.`,
-    subtext: "Snap what you bought so we can learn the merchant and auto-fill your ledger.",
+    subtext:
+      memoryDecision?.shouldRequestBounty
+        ? "Snap a menu or QR stand if you want to help map this merchant faster."
+        : "Snap what you bought so we can learn the merchant and auto-fill your ledger.",
   };
 }
