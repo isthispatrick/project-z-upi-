@@ -146,6 +146,8 @@ npm run dev
 
 Server runs on `http://localhost:3000`.
 
+The backend automatically loads a repo-root `.env` file during local development.
+
 To enable Postgres persistence:
 
 ```bash
