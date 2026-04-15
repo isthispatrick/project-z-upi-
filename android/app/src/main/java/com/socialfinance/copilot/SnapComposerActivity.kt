@@ -1,6 +1,7 @@
 package com.socialfinance.copilot
 
 import android.Manifest
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,21 +12,30 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import androidx.work.WorkInfo
 import com.socialfinance.copilot.data.CopilotRepository
 import com.socialfinance.copilot.data.LocationProvider
+import com.socialfinance.copilot.data.PendingSnapDraftStore
 import com.socialfinance.copilot.data.PreparedSnapDraft
+import com.socialfinance.copilot.data.SelectedRecipient
 import com.socialfinance.copilot.data.SnapItemPayload
 import com.socialfinance.copilot.media.MediaCaptureManager
+import com.socialfinance.copilot.queue.SnapDraftQueueManager
 import com.socialfinance.copilot.databinding.ActivitySnapComposerBinding
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 class SnapComposerActivity : AppCompatActivity() {
   private lateinit var binding: ActivitySnapComposerBinding
   private lateinit var repository: CopilotRepository
   private lateinit var locationProvider: LocationProvider
   private lateinit var mediaCaptureManager: MediaCaptureManager
+  private lateinit var pendingSnapDraftStore: PendingSnapDraftStore
+  private lateinit var snapDraftQueueManager: SnapDraftQueueManager
   private var capturedPhotoUri: Uri? = null
   private var preparedDraft: PreparedSnapDraft? = null
+  private var selectedRecipients: List<SelectedRecipient> = emptyList()
+  private val json = Json { ignoreUnknownKeys = true }
 
   private val cameraPermissionLauncher =
     registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -40,10 +50,19 @@ class SnapComposerActivity : AppCompatActivity() {
     registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
       if (success) {
         binding.captureStatus.text = getString(R.string.photo_captured_ready)
-        prepareDraftFromCapture()
+        queueDraftPreparation()
       } else {
         binding.captureStatus.text = getString(R.string.photo_capture_missing)
       }
+    }
+
+  private val recipientPickerLauncher =
+    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+      val raw = result.data?.getStringExtra(FriendPickerActivity.EXTRA_SELECTED_JSON) ?: return@registerForActivityResult
+      selectedRecipients = runCatching {
+        json.decodeFromString<List<SelectedRecipient>>(raw)
+      }.getOrDefault(emptyList())
+      renderRecipientSummary()
     }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +73,8 @@ class SnapComposerActivity : AppCompatActivity() {
     repository = CopilotRepository(applicationContext)
     locationProvider = LocationProvider(applicationContext)
     mediaCaptureManager = MediaCaptureManager(applicationContext)
+    pendingSnapDraftStore = PendingSnapDraftStore(applicationContext)
+    snapDraftQueueManager = SnapDraftQueueManager(applicationContext)
 
     val transactionId = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
     val promptHeadline = intent.getStringExtra(EXTRA_PROMPT_HEADLINE).orEmpty()
@@ -63,11 +84,27 @@ class SnapComposerActivity : AppCompatActivity() {
     binding.promptSubtext.text = promptSubtext
     addReviewItemRow()
     updateReviewSummary()
+    renderRecipientSummary()
     binding.addItemButton.setOnClickListener {
       addReviewItemRow()
     }
     binding.capturePhotoButton.setOnClickListener {
       cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+    binding.pickRecipientsButton.setOnClickListener {
+      if (repository.getCurrentUserId().isNullOrBlank()) {
+        Toast.makeText(this, getString(R.string.friend_picker_sign_in_required), Toast.LENGTH_SHORT).show()
+        return@setOnClickListener
+      }
+
+      recipientPickerLauncher.launch(
+        Intent(this, FriendPickerActivity::class.java).apply {
+          putStringArrayListExtra(
+            FriendPickerActivity.EXTRA_PRESELECTED_IDS,
+            ArrayList(selectedRecipients.map { it.id }),
+          )
+        },
+      )
     }
 
     binding.submitSnapButton.setOnClickListener {
@@ -98,6 +135,7 @@ class SnapComposerActivity : AppCompatActivity() {
           preparedDraft = draft,
           reviewedItems = reviewedItems,
           gps = gps,
+          shareWith = selectedRecipients.map { it.id },
         )
 
         Toast.makeText(
@@ -113,37 +151,38 @@ class SnapComposerActivity : AppCompatActivity() {
         }
       }
     }
+
+    pendingSnapDraftStore.getDraft(transactionId)?.let { draft ->
+      preparedDraft = draft
+      renderReviewItems(draft.suggestedItems)
+      binding.extractionStatus.text = getString(
+        R.string.extraction_ready,
+        draft.confidence,
+        draft.notes.joinToString(", "),
+      )
+      setSubmitState(isBusy = false, enableSubmit = true, hint = getString(R.string.submit_hint_ready))
+    }
+
+    pendingSnapDraftStore.getWorkId(transactionId)?.let { observeDraftWork(it.toString(), transactionId) }
   }
 
-  private fun prepareDraftFromCapture() {
+  private fun queueDraftPreparation() {
     val photoUri = capturedPhotoUri ?: return
-    binding.captureStatus.text = getString(R.string.preparing_draft)
-    setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_loading))
+    val transactionId = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
+    val merchantLabel = intent.getStringExtra(EXTRA_MERCHANT_LABEL).orEmpty()
+    val amountRupees = intent.getStringExtra(EXTRA_AMOUNT_RUPEES).orEmpty()
 
-    lifecycleScope.launch {
-      val result = repository.prepareSnapDraft(
-        transactionId = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty(),
-        merchantLabel = collectReviewedItems().firstOrNull()?.name.orEmpty(),
-        amountRupees = collectReviewedItems().firstOrNull()?.let { (it.pricePaise / 100.0).toString() }.orEmpty(),
-        localPhotoUri = photoUri,
-      )
-
-      result.onSuccess { draft ->
-        preparedDraft = draft
-        renderReviewItems(draft.suggestedItems)
-        binding.extractionStatus.text = getString(
-          R.string.extraction_ready,
-          draft.confidence,
-          draft.notes.joinToString(", "),
-        )
-        binding.captureStatus.text = getString(R.string.photo_captured_ready)
-        updateReviewSummary()
-        setSubmitState(isBusy = false, enableSubmit = true, hint = getString(R.string.submit_hint_ready))
-      }.onFailure {
-        binding.extractionStatus.text = getString(R.string.extraction_failed)
-        setSubmitState(isBusy = false, enableSubmit = false, hint = getString(R.string.extract_before_submit))
-      }
-    }
+    val request = snapDraftQueueManager.enqueue(
+      transactionId = transactionId,
+      merchantLabel = merchantLabel,
+      amountRupees = amountRupees,
+      photoUri = photoUri,
+    )
+    pendingSnapDraftStore.saveWorkId(transactionId, request.id)
+    binding.captureStatus.text = getString(R.string.extraction_queued)
+    binding.extractionStatus.text = getString(R.string.extraction_queued)
+    setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_queued))
+    observeDraftWork(request.id.toString(), transactionId)
   }
 
   private fun launchCameraCapture() {
@@ -234,9 +273,58 @@ class SnapComposerActivity : AppCompatActivity() {
     }
   }
 
+  private fun renderRecipientSummary() {
+    binding.recipientSummary.text = if (selectedRecipients.isEmpty()) {
+      getString(R.string.recipient_summary_empty)
+    } else {
+      getString(
+        R.string.recipient_summary_ready,
+        selectedRecipients.joinToString(", ") { it.label },
+      )
+    }
+  }
+
+  private fun observeDraftWork(workId: String, transactionId: String) {
+    val parsedId = runCatching { java.util.UUID.fromString(workId) }.getOrNull() ?: return
+    snapDraftQueueManager.getWorkManager()
+      .getWorkInfoByIdLiveData(parsedId)
+      .observe(this) { info ->
+        when (info?.state) {
+          WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+            binding.extractionStatus.text = getString(R.string.extraction_queued)
+            setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_queued))
+          }
+          WorkInfo.State.RUNNING -> {
+            binding.extractionStatus.text = getString(R.string.extraction_running)
+            setSubmitState(isBusy = true, enableSubmit = false, hint = getString(R.string.submit_hint_loading))
+          }
+          WorkInfo.State.SUCCEEDED -> {
+            pendingSnapDraftStore.getDraft(transactionId)?.let { draft ->
+              preparedDraft = draft
+              renderReviewItems(draft.suggestedItems)
+              binding.extractionStatus.text = getString(
+                R.string.extraction_ready,
+                draft.confidence,
+                draft.notes.joinToString(", "),
+              )
+              binding.captureStatus.text = getString(R.string.photo_captured_ready)
+              setSubmitState(isBusy = false, enableSubmit = true, hint = getString(R.string.submit_hint_ready))
+            }
+          }
+          WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+            pendingSnapDraftStore.clearWorkId(transactionId)
+            binding.extractionStatus.text = getString(R.string.extraction_failed)
+            setSubmitState(isBusy = false, enableSubmit = false, hint = getString(R.string.extract_before_submit))
+          }
+          null -> Unit
+        }
+      }
+  }
+
   private fun setSubmitState(isBusy: Boolean, enableSubmit: Boolean, hint: String) {
     binding.capturePhotoButton.isEnabled = !isBusy
     binding.addItemButton.isEnabled = !isBusy
+    binding.pickRecipientsButton.isEnabled = !isBusy
     binding.submitSnapButton.isEnabled = enableSubmit
     binding.submitHint.text = hint
   }
@@ -245,5 +333,7 @@ class SnapComposerActivity : AppCompatActivity() {
     const val EXTRA_TRANSACTION_ID = "transaction_id"
     const val EXTRA_PROMPT_HEADLINE = "prompt_headline"
     const val EXTRA_PROMPT_SUBTEXT = "prompt_subtext"
+    const val EXTRA_MERCHANT_LABEL = "merchant_label"
+    const val EXTRA_AMOUNT_RUPEES = "amount_rupees"
   }
 }

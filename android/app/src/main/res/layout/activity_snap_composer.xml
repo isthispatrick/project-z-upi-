@@ -113,6 +113,21 @@
             android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
         <Button
+            android:id="@+id/pickRecipientsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/pick_recipients" />
+
+        <TextView
+            android:id="@+id/recipientSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/recipient_summary_empty"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
+
+        <Button
             android:id="@+id/submitSnapButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

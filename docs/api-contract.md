@@ -130,6 +130,9 @@ Response:
     "id": "friend_xxx",
     "userId": "user_xxx",
     "friendUserId": "user_friend_yyy",
+    "displayName": "Vishesh",
+    "email": "vishesh@example.com",
+    "photoUrl": "https://lh3.googleusercontent.com/a/example",
     "createdAt": "2026-04-15T07:10:00.000Z"
   }
 ]
@@ -362,12 +365,10 @@ When all intended viewers have opened the share, the backend marks it as wiped w
 4. Call `/api/notifications/ingest`.
 5. Open snap composer.
 6. Capture photo locally with `FileProvider`.
-7. Call `/api/media/upload-intents`.
-8. `PUT` the media bytes to the returned target.
-9. Call `/api/media/confirm`.
-10. Call `/api/vision/extract-snap`.
-11. Let the user edit extracted draft items.
-12. Submit `/api/snaps` with the returned `mediaRef` and reviewed items.
+7. Queue draft preparation with WorkManager so upload, confirm, and extraction retry automatically on bad networks.
+8. Let the user edit extracted draft items after the queued job succeeds.
+9. Optionally open the friend picker and select recipients from `/api/friends`.
+10. Submit `/api/snaps` with the returned `mediaRef`, reviewed items, and selected recipients.
 
 ## Source of truth
 

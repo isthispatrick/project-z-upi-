@@ -50,4 +50,27 @@ describe("SocialFinanceCopilotService", () => {
     expect(friends).toHaveLength(1);
     expect(friends[0]?.friendUserId).toBe("user_2");
   });
+
+  it("enriches friend recipients with stored user profiles", async () => {
+    const store = new MemoryPersistenceAdapter();
+    await store.saveUser({
+      id: "user_2",
+      email: "vishesh@example.com",
+      displayName: "Vishesh",
+      photoUrl: "https://example.com/vishesh.jpg",
+      authProvider: "GOOGLE",
+      providerUserId: "google-2",
+      createdAt: "2026-04-15T05:00:00.000Z",
+      lastSeenAt: "2026-04-15T05:00:00.000Z",
+    });
+    const service = new SocialFinanceCopilotService(store);
+    await service.addFriendLink({
+      userId: "user_1",
+      friendUserId: "user_2",
+    });
+
+    const friends = await service.listFriendRecipients("user_1");
+    expect(friends[0]?.displayName).toBe("Vishesh");
+    expect(friends[0]?.email).toBe("vishesh@example.com");
+  });
 });

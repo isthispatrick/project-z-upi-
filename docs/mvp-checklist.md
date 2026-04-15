@@ -10,9 +10,11 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 - UPI notification ingestion API
 - Merchant/VPA memory graph scaffold
 - Friend graph backend scaffold
+- Friend recipient picker UI on Android
 - Snap upload contract
 - Cloudflare R2-backed media upload path with local-dev fallback
 - OpenAI vision-backed snap extraction with heuristic fallback
+- WorkManager-backed queued snap draft preparation for offline-prone networks
 - Editable extracted-items review flow on Android
 - Ledger creation API
 - Basic ledger listing API and Android history screen scaffold
@@ -26,8 +28,8 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 ### Critical
 
 - Better prompt/schema tuning for the vision extraction pipeline so uploaded media turns into reliable draft items
-- Android retry and offline sync for snap uploads, media confirmation, and final ledger submit
-- Read/write the friend graph from Android so "Snap to Friend" is a real user action
+- Final reviewed snap submission retry and offline sync
+- Friend creation and management UI on Android so recipients can be maintained in-app
 
 ### Important
 
@@ -42,8 +44,8 @@ This is the shortest sensible path to a testable beta for Social Finance Copilot
 
 ## Suggested build order
 
-1. Android background upload retry and sync state
-2. Friend graph UI and snap recipient picker
+1. Final submit retry and offline sync for reviewed snaps
+2. Friend creation and management UI
 3. Normalized Postgres models and migrations
 4. Auth and onboarding polish
 5. Abuse controls and payout trust scoring

@@ -59,6 +59,9 @@ class MainActivity : AppCompatActivity() {
     setContentView(binding.root)
     repository = CopilotRepository(applicationContext)
     googleSignInManager = GoogleSignInManager(applicationContext)
+    binding.authStatus.text = repository.getCurrentDisplayName()?.let {
+      getString(R.string.google_auth_success, it)
+    } ?: getString(R.string.google_auth_waiting)
 
     binding.openListenerSettingsButton.setOnClickListener {
       startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))

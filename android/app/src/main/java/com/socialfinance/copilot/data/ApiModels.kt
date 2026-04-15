@@ -22,6 +22,7 @@ data class TransactionPayload(
   val id: String,
   val category: String,
   val merchantLabel: String? = null,
+  val amountPaise: Int? = null,
 )
 
 @Serializable
@@ -148,6 +149,38 @@ data class GoogleAuthResponse(
   val user: AuthenticatedUserPayload,
 )
 
+@Serializable
+data class FriendRecipientPayload(
+  val id: String,
+  val userId: String,
+  val friendUserId: String,
+  val displayName: String? = null,
+  val email: String? = null,
+  val photoUrl: String? = null,
+)
+
+@Serializable
+data class FriendLinkRequest(
+  val userId: String,
+  val friendUserId: String,
+)
+
+@Serializable
+data class StoredPreparedSnapDraft(
+  val transactionId: String,
+  val mediaRef: String,
+  val suggestedItems: List<SnapItemPayload>,
+  val confidence: Double,
+  val notes: List<String>,
+)
+
+@Serializable
+data class SelectedRecipient(
+  val id: String,
+  val label: String,
+)
+
+@Serializable
 data class PreparedSnapDraft(
   val transactionId: String,
   val mediaRef: String,

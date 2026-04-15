@@ -298,6 +298,27 @@ export class SocialFinanceCopilotService {
     return this.store.listFriendLinks(userId);
   }
 
+  async listFriendRecipients(userId: string): Promise<Array<FriendLink & {
+    displayName?: string;
+    email?: string;
+    photoUrl?: string;
+  }>> {
+    const links = await this.store.listFriendLinks(userId);
+    const enriched = await Promise.all(
+      links.map(async (link) => {
+        const user = await this.store.getUser(link.friendUserId);
+        return {
+          ...link,
+          displayName: user?.displayName,
+          email: user?.email,
+          photoUrl: user?.photoUrl,
+        };
+      }),
+    );
+
+    return enriched;
+  }
+
   getShare(shareId: string) {
     return this.store.getShare(shareId);
   }

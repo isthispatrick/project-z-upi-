@@ -81,7 +81,7 @@ export async function createApp() {
       return;
     }
 
-    response.json(await service.listFriendLinks(userId));
+    response.json(await service.listFriendRecipients(userId));
   });
 
   app.post("/api/friends", async (request, response) => {

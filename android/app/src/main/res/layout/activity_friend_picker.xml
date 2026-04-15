@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/friendPickerTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/friend_picker_title"
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
+
+        <TextView
+            android:id="@+id/friendPickerStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/loading_friends"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+
+        <LinearLayout
+            android:id="@+id/friendCheckboxContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/confirmRecipientsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/confirm_recipients" />
+    </LinearLayout>
+
+</ScrollView>

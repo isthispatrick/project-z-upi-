@@ -21,6 +21,7 @@ class CopilotRepository(context: Context) {
   private val json = Json { ignoreUnknownKeys = true }
   private val appContext = context.applicationContext
   private val deviceIdentityStore = DeviceIdentityStore(appContext)
+  private val userSessionStore = UserSessionStore(appContext)
 
   suspend fun ingestNotification(
     sourceApp: String,
@@ -45,6 +46,7 @@ class CopilotRepository(context: Context) {
     preparedDraft: PreparedSnapDraft,
     reviewedItems: List<SnapItemPayload>,
     gps: GeoPointPayload?,
+    shareWith: List<String> = emptyList(),
   ): Result<SnapUploadResponse> {
     return withContext(Dispatchers.IO) {
       runCatching {
@@ -54,6 +56,7 @@ class CopilotRepository(context: Context) {
           photoRef = preparedDraft.mediaRef,
           gps = gps,
           items = reviewedItems,
+          shareWith = shareWith,
         )
 
         post("api/snaps", request, SnapUploadResponse.serializer())
@@ -158,10 +161,30 @@ class CopilotRepository(context: Context) {
             idToken = idToken,
           ),
           GoogleAuthResponse.serializer(),
+        ).also { response ->
+          userSessionStore.saveUser(response.user)
+        }
+      }
+    }
+  }
+
+  suspend fun fetchFriends(): Result<List<FriendRecipientPayload>> {
+    val userId = userSessionStore.getUserId()
+      ?: return Result.failure(IllegalStateException("Sign in with Google first"))
+
+    return withContext(Dispatchers.IO) {
+      runCatching {
+        getList(
+          "api/friends?userId=$userId",
+          FriendRecipientPayload.serializer(),
         )
       }
     }
   }
+
+  fun getCurrentUserId(): String? = userSessionStore.getUserId()
+
+  fun getCurrentDisplayName(): String? = userSessionStore.getDisplayName()
 
   suspend fun submitBountyDraft(
     merchantVpa: String,

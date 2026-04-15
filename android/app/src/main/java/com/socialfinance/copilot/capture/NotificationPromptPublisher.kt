@@ -21,6 +21,11 @@ class NotificationPromptPublisher(private val context: Context) {
       putExtra(SnapComposerActivity.EXTRA_TRANSACTION_ID, payload.transaction.id)
       putExtra(SnapComposerActivity.EXTRA_PROMPT_HEADLINE, payload.prompt.headline)
       putExtra(SnapComposerActivity.EXTRA_PROMPT_SUBTEXT, payload.prompt.subtext)
+      putExtra(SnapComposerActivity.EXTRA_MERCHANT_LABEL, payload.transaction.merchantLabel.orEmpty())
+      putExtra(
+        SnapComposerActivity.EXTRA_AMOUNT_RUPEES,
+        payload.transaction.amountPaise.toAmountRupees(),
+      )
     }
 
     val pendingIntent = PendingIntent.getActivity(
@@ -63,4 +68,9 @@ class NotificationPromptPublisher(private val context: Context) {
   companion object {
     private const val CHANNEL_ID = "snap_prompts"
   }
+}
+
+private fun Int?.toAmountRupees(): String {
+  val safe = this ?: 0
+  return String.format("%.2f", safe / 100.0)
 }
